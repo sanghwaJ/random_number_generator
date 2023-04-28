@@ -12,6 +12,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  int maxNumber = 1000;
   List<int> randomNumbers = [
     123,
     456,
@@ -30,7 +31,9 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _Header(),
+              _Header(
+                onPressed: onSettingsPop,
+              ),
               _Body(
                 randomNumbers: randomNumbers,
               ),
@@ -50,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final Set<int> newNumbers = {};
 
     while (newNumbers.length != 3) {
-      final number = rand.nextInt(1000);
+      final number = rand.nextInt(maxNumber);
       newNumbers.add(number);
     }
 
@@ -58,10 +61,32 @@ class _HomeScreenState extends State<HomeScreen> {
       randomNumbers = newNumbers.toList();
     });
   }
+
+  // settings_screen에서 pop을 실행했을 때, 미래에 값을 받기 때문에 async와 await를 사용해야 함
+  void onSettingsPop() async {
+    // push는 List의 add와 같음 => [HomeScreen(), SettingsScreen()]
+    final result = await Navigator.of(context).push<int>(
+      MaterialPageRoute(
+        builder: (BuildContext context) {
+          return SettingsScreen();
+        },
+      ),
+    );
+
+    // 그냥 뒤로가기를 했을 때, 값을 받을 방법이 없음 => 따라서, null이 들어올 가능성이 있음
+    // 따라서, Navigation에서 리턴 받는 값은 언제든 null이 들어올 수 있음을 인지하고 구현해야 함
+    if (result != null) {
+      setState(() {
+        maxNumber = result;
+      });
+    }
+  }
 }
 
 class _Header extends StatelessWidget {
-  const _Header({Key? key}) : super(key: key);
+  final VoidCallback onPressed;
+
+  const _Header({required this.onPressed, Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -77,16 +102,7 @@ class _Header extends StatelessWidget {
           ),
         ),
         IconButton(
-          onPressed: () {
-            // push는 List의 add와 같음 => [HomeScreen(), SettingsScreen()]
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (BuildContext context) {
-                  return SettingsScreen();
-                },
-              ),
-            );
-          },
+          onPressed: onPressed,
           icon: Icon(
             Icons.settings,
             color: RED_COLOR,
